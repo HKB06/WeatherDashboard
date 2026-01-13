@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.cursor/
+
+# Logs
+*.log
+logs/
+
+# Données générées
+work/frontend/weather_data.json
+work/model/
+
+# Docker volumes
+hadoop_namenode/
+hadoop_datanode/
+hdfs-data/
+
+# Spark checkpoints
+checkpoint/
+*.checkpoint
+
+# Fichiers temporaires
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+
+.env
+*.env.local

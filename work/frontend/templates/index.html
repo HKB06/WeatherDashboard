@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Dashboard</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@300;500;700&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg-dark: #0a0a0f;
+            --bg-card: #12121a;
+            --bg-card-hover: #1a1a25;
+            --accent: #00d4aa;
+            --accent-dim: #00a88540;
+            --danger: #ff4757;
+            --warning: #ffa502;
+            --cold: #00b4d8;
+            --text: #e8e8e8;
+            --text-dim: #8888a0;
+            --border: #2a2a3a;
+        }
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(ellipse at top, #1a1a2e 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, #0d2f3f20 0%, transparent 40%);
+        }
+        
+        .container { max-width: 1600px; margin: 0 auto; padding: 2rem; }
+        
+        header { text-align: center; padding: 2rem 0 3rem; }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent), #00ffcc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle { color: var(--text-dim); font-size: 1rem; }
+        
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+        }
+        
+        .tab {
+            padding: 0.8rem 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+        
+        .tab:hover { border-color: var(--accent); }
+        .tab.active { background: var(--accent); color: var(--bg-dark); font-weight: 700; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+        
+        .stat-label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; }
+        .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+        .stat-value.danger { color: var(--danger); }
+        
+        .section-title {
+            font-size: 1.1rem;
+            margin: 2rem 0 1rem;
+            padding-left: 1rem;
+            border-left: 3px solid var(--accent);
+        }
+        
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .city-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+        
+        .city-header { display: flex; justify-content: space-between; margin-bottom: 1rem; }
+        .city-name { font-size: 1.3rem; font-weight: 700; }
+        .city-country { color: var(--text-dim); font-size: 0.85rem; }
+        .city-date { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim); }
+        
+        .badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+        .badge.normal { background: var(--accent-dim); color: var(--accent); }
+        .badge.alert { background: #ff475730; color: var(--danger); }
+        .badge.warning { background: #ffa50230; color: var(--warning); }
+        
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+        }
+        
+        .metric {
+            text-align: center;
+            padding: 0.6rem;
+            background: var(--bg-dark);
+            border-radius: 8px;
+        }
+        .metric-icon { font-size: 1.2rem; }
+        .metric-value { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 700; }
+        .metric-label { font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; }
+        
+        /* Historique HDFS */
+        .history-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .history-controls select, .history-controls input {
+            padding: 0.6rem 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: inherit;
+        }
+        
+        .history-controls select:focus, .history-controls input:focus {
+            border-color: var(--accent);
+            outline: none;
+        }
+        
+        .history-table {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .history-table th, .history-table td {
+            padding: 0.7rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .history-table th {
+            background: var(--bg-dark);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-dim);
+        }
+        
+        .history-table td {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+        
+        .history-table tr:hover { background: var(--bg-card-hover); }
+        
+        .pagination {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            justify-content: center;
+        }
+        
+        .pagination button {
+            padding: 0.5rem 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            cursor: pointer;
+        }
+        
+        .pagination button:hover { border-color: var(--accent); }
+        .pagination button.active { background: var(--accent); color: var(--bg-dark); }
+        
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #ff475720;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            color: var(--danger);
+            margin-left: 1rem;
+        }
+        
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--danger);
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        
+        .empty-state { text-align: center; padding: 3rem; color: var(--text-dim); }
+        
+        footer { text-align: center; padding: 2rem; color: var(--text-dim); font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌤️ Weather Dashboard</h1>
+            <p class="subtitle">Visualisation temps réel</p>
+        </header>
+        
+        <!-- Onglets -->
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('realtime')">⚡ Temps Réel</div>
+            <div class="tab" onclick="showTab('history')">📊 Historique HDFS</div>
+            <div class="tab" onclick="showTab('anomalies')">🚨 Anomalies</div>
+        </div>
+        
+        <!-- Stats globales -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">📨 Messages Kafka</div>
+                <div class="stat-value" id="total-messages">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">🗄️ Records HDFS</div>
+                <div class="stat-value" id="hdfs-records">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">🏙️ Villes</div>
+                <div class="stat-value" id="total-cities">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">🚨 Anomalies</div>
+                <div class="stat-value danger" id="total-anomalies">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">📡 Statut</div>
+                <div class="stat-value" id="status" style="font-size: 0.9rem;">--</div>
+            </div>
+        </div>
+        
+        <!-- Onglet Temps Réel -->
+        <div id="tab-realtime" class="tab-content active">
+            <h2 class="section-title">📍 Données en temps réel <span class="live-indicator"><span class="live-dot"></span> LIVE</span></h2>
+            <div class="data-grid" id="cities-grid">
+                <div class="empty-state">⏳ En attente de données...</div>
+            </div>
+        </div>
+        
+        <!-- Onglet Historique HDFS -->
+        <div id="tab-history" class="tab-content">
+            <h2 class="section-title">📊 Historique des données HDFS</h2>
+            
+            <div class="history-controls">
+                <select id="filter-city">
+                    <option value="">Toutes les villes</option>
+                </select>
+                <input type="date" id="filter-date-start" placeholder="Date début">
+                <input type="date" id="filter-date-end" placeholder="Date fin">
+                <button onclick="filterHistory()" style="padding: 0.6rem 1rem; background: var(--accent); border: none; border-radius: 8px; color: var(--bg-dark); cursor: pointer; font-weight: 700;">
+                    Filtrer
+                </button>
+            </div>
+            
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Date/Heure</th>
+                        <th>Ville</th>
+                        <th>Pays</th>
+                        <th>Temp °C</th>
+                        <th>Ressenti</th>
+                        <th>Vent m/s</th>
+                        <th>Humidité %</th>
+                        <th>Pression</th>
+                        <th>Alerte</th>
+                    </tr>
+                </thead>
+                <tbody id="history-body">
+                    <tr><td colspan="9" class="empty-state">Chargement...</td></tr>
+                </tbody>
+            </table>
+            
+            <div class="pagination" id="pagination"></div>
+        </div>
+        
+        <!-- Onglet Anomalies -->
+        <div id="tab-anomalies" class="tab-content">
+            <h2 class="section-title">🚨 Anomalies détectées</h2>
+            <div id="anomalies-list" class="empty-state">Aucune anomalie</div>
+        </div>
+        
+        <footer>
+            🌍 Kafka Weather Project • Open-Meteo API • Apache Spark • HDFS
+        </footer>
+    </div>
+    
+    <script>
+        let hdfsData = [];
+        let currentPage = 1;
+        const perPage = 20;
+        
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
+        }
+        
+        function formatDate(dateStr) {
+            if (!dateStr) return '--';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('fr-FR', { 
+                weekday: 'short', day: 'numeric', month: 'short',
+                hour: '2-digit', minute: '2-digit'
+            });
+        }
+        
+        function formatDateShort(dateStr) {
+            if (!dateStr) return '--';
+            return new Date(dateStr).toLocaleString('fr-FR');
+        }
+        
+        async function fetchData() {
+            try {
+                // Stats
+                const status = await (await fetch('/api/status')).json();
+                document.getElementById('total-messages').textContent = status.realtime_messages || 0;
+                document.getElementById('hdfs-records').textContent = status.hdfs_records || 0;
+                document.getElementById('total-anomalies').textContent = status.anomalies || 0;
+                document.getElementById('status').textContent = status.hdfs || 'offline';
+                
+                // Dernières données par ville
+                const latest = await (await fetch('/api/latest')).json();
+                const citiesGrid = document.getElementById('cities-grid');
+                document.getElementById('total-cities').textContent = Object.keys(latest).length;
+                
+                if (Object.keys(latest).length > 0) {
+                    citiesGrid.innerHTML = Object.entries(latest).map(([city, d]) => {
+                        const isWindy = d.wind_alert_level === 'level_1' || d.wind_alert_level === 'level_2';
+                        const isHot = d.heat_alert_level === 'level_1' || d.heat_alert_level === 'level_2';
+                        
+                        let badge = '<span class="badge normal">✓ OK</span>';
+                        if (d.wind_alert_level === 'level_2' || d.heat_alert_level === 'level_2') {
+                            badge = '<span class="badge alert">🚨 ALERTE</span>';
+                        } else if (isWindy) {
+                            badge = '<span class="badge warning">💨 VENT</span>';
+                        } else if (isHot) {
+                            badge = '<span class="badge warning">🔥 CHAUD</span>';
+                        }
+                        
+                        return `
+                            <div class="city-card">
+                                <div class="city-header">
+                                    <div>
+                                        <div class="city-name">${d.city || city}</div>
+                                        <div class="city-country">${d.country || ''}</div>
+                                        <div class="city-date">📅 ${formatDate(d.event_time)}</div>
+                                    </div>
+                                    ${badge}
+                                </div>
+                                <div class="metrics">
+                                    <div class="metric">
+                                        <div class="metric-icon">🌡️</div>
+                                        <div class="metric-value">${d.temperature?.toFixed(1) || '--'}°</div>
+                                        <div class="metric-label">Temp</div>
+                                    </div>
+                                    <div class="metric">
+                                        <div class="metric-icon">🤒</div>
+                                        <div class="metric-value">${d.apparent_temperature?.toFixed(1) || '--'}°</div>
+                                        <div class="metric-label">Ressenti</div>
+                                    </div>
+                                    <div class="metric">
+                                        <div class="metric-icon">💨</div>
+                                        <div class="metric-value">${d.windspeed?.toFixed(1) || '--'}</div>
+                                        <div class="metric-label">Vent</div>
+                                    </div>
+                                    <div class="metric">
+                                        <div class="metric-icon">💧</div>
+                                        <div class="metric-value">${d.humidity || '--'}</div>
+                                        <div class="metric-label">Humid.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+                
+                // Anomalies
+                const anomalies = await (await fetch('/api/anomalies')).json();
+                const anomaliesList = document.getElementById('anomalies-list');
+                if (anomalies.length > 0) {
+                    anomaliesList.innerHTML = anomalies.slice(-20).reverse().map(a => `
+                        <div class="city-card" style="margin-bottom: 0.5rem;">
+                            <strong style="color: var(--danger);">${a.anomaly_type || 'ANOMALIE'}</strong>
+                            - ${a.city || 'Unknown'} | ${a.temperature?.toFixed(1)}°C
+                            <span style="color: var(--text-dim); font-size: 0.8rem;">${formatDate(a.event_time)}</span>
+                        </div>
+                    `).join('');
+                }
+                
+            } catch (e) {
+                console.error('Erreur:', e);
+            }
+        }
+        
+        async function loadHdfsData() {
+            try {
+                hdfsData = await (await fetch('/api/hdfs')).json();
+                
+                // Remplir le filtre des villes
+                const cities = [...new Set(hdfsData.map(d => d.city).filter(Boolean))];
+                const select = document.getElementById('filter-city');
+                select.innerHTML = '<option value="">Toutes les villes</option>' + 
+                    cities.map(c => `<option value="${c}">${c}</option>`).join('');
+                
+                renderHistory();
+            } catch (e) {
+                console.error('Erreur HDFS:', e);
+            }
+        }
+        
+        function filterHistory() {
+            currentPage = 1;
+            renderHistory();
+        }
+        
+        function renderHistory() {
+            const cityFilter = document.getElementById('filter-city').value;
+            const dateStart = document.getElementById('filter-date-start').value;
+            const dateEnd = document.getElementById('filter-date-end').value;
+            
+            let filtered = hdfsData;
+            
+            if (cityFilter) {
+                filtered = filtered.filter(d => d.city === cityFilter);
+            }
+            if (dateStart) {
+                filtered = filtered.filter(d => d.event_time >= dateStart);
+            }
+            if (dateEnd) {
+                filtered = filtered.filter(d => d.event_time <= dateEnd + 'T23:59:59');
+            }
+            
+            // Pagination
+            const totalPages = Math.ceil(filtered.length / perPage);
+            const start = (currentPage - 1) * perPage;
+            const pageData = filtered.slice(start, start + perPage);
+            
+            // Render table
+            const tbody = document.getElementById('history-body');
+            if (pageData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="empty-state">Aucune donnée</td></tr>';
+            } else {
+                tbody.innerHTML = pageData.map(d => {
+                    const alertIcon = (d.wind_alert_level === 'level_2' || d.heat_alert_level === 'level_2') 
+                        ? '🚨' : (d.wind_alert_level === 'level_1' || d.heat_alert_level === 'level_1') 
+                        ? '⚠️' : '✓';
+                    return `
+                        <tr>
+                            <td>${formatDateShort(d.event_time)}</td>
+                            <td>${d.city || '--'}</td>
+                            <td>${d.country || '--'}</td>
+                            <td>${d.temperature?.toFixed(1) || '--'}</td>
+                            <td>${d.apparent_temperature?.toFixed(1) || '--'}</td>
+                            <td>${d.windspeed?.toFixed(1) || '--'}</td>
+                            <td>${d.humidity || '--'}</td>
+                            <td>${d.pressure_msl?.toFixed(0) || '--'}</td>
+                            <td>${alertIcon}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+            
+            // Pagination buttons
+            const pagination = document.getElementById('pagination');
+            if (totalPages > 1) {
+                let buttons = '';
+                if (currentPage > 1) buttons += `<button onclick="goPage(${currentPage-1})">◀ Préc</button>`;
+                buttons += `<button class="active">${currentPage} / ${totalPages}</button>`;
+                if (currentPage < totalPages) buttons += `<button onclick="goPage(${currentPage+1})">Suiv ▶</button>`;
+                pagination.innerHTML = buttons;
+            } else {
+                pagination.innerHTML = '';
+            }
+        }
+        
+        function goPage(page) {
+            currentPage = page;
+            renderHistory();
+        }
+        
+        // Init
+        fetchData();
+        loadHdfsData();
+        setInterval(fetchData, 3000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+version: '3.8'
+
+services:
+  # Zookeeper pour Kafka
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  # Kafka Broker
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    hostname: kafka
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+  # Kafka UI pour visualiser les topics
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      - kafka
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+
+  # Hadoop HDFS - Namenode
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: namenode
+    hostname: namenode
+    ports:
+      - "9870:9870"
+      - "9000:9000"
+    environment:
+      CLUSTER_NAME: "weather-cluster"
+      CORE_CONF_fs_defaultFS: "hdfs://namenode:9000"
+      CORE_CONF_hadoop_http_staticuser_user: "root"
+      HDFS_CONF_dfs_webhdfs_enabled: "true"
+      HDFS_CONF_dfs_permissions_enabled: "false"
+    volumes:
+      - hadoop_namenode:/hadoop/dfs/name
+      - ./hdfs-data:/hdfs-data
+
+  # Hadoop HDFS - Datanode
+  datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode
+    hostname: datanode
+    depends_on:
+      - namenode
+    ports:
+      - "9864:9864"
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870"
+      CORE_CONF_fs_defaultFS: "hdfs://namenode:9000"
+      CORE_CONF_hadoop_http_staticuser_user: "root"
+      HDFS_CONF_dfs_webhdfs_enabled: "true"
+      HDFS_CONF_dfs_permissions_enabled: "false"
+    volumes:
+      - hadoop_datanode:/hadoop/dfs/data
+
+  # Spark Master
+  spark-master:
+    image: bitnami/spark:3.5
+    container_name: spark-master
+    hostname: spark-master
+    ports:
+      - "8081:8080"
+      - "7077:7077"
+    environment:
+      SPARK_MODE: master
+      SPARK_RPC_AUTHENTICATION_ENABLED: "no"
+      SPARK_RPC_ENCRYPTION_ENABLED: "no"
+      SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED: "no"
+      SPARK_SSL_ENABLED: "no"
+
+  # Spark Worker
+  spark-worker:
+    image: bitnami/spark:3.5
+    container_name: spark-worker
+    hostname: spark-worker
+    depends_on:
+      - spark-master
+    environment:
+      SPARK_MODE: worker
+      SPARK_MASTER_URL: spark://spark-master:7077
+      SPARK_WORKER_MEMORY: 2G
+      SPARK_WORKER_CORES: 2
+      SPARK_RPC_AUTHENTICATION_ENABLED: "no"
+      SPARK_RPC_ENCRYPTION_ENABLED: "no"
+      SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED: "no"
+      SPARK_SSL_ENABLED: "no"
+
+volumes:
+  hadoop_namenode:
+  hadoop_datanode:
+
+networks:
+  default:
+    name: kafka-weather-network

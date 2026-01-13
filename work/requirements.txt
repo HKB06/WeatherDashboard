@@ -1,0 +1,11 @@
+# Kafka
+kafka-python-ng==2.2.2
+
+# API HTTP
+requests==2.31.0
+
+# Utilitaires
+python-dateutil==2.8.2
+
+# Frontend Flask
+flask==3.0.0
