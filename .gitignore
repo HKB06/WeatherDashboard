@@ -48,3 +48,4 @@ Thumbs.db
 
 .env
 *.env.local
+hadoop.env
